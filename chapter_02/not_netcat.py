@@ -94,51 +94,35 @@ def client_handler(client_socket):
             client_socket.send(response)
 
 
-def usage():
-    print "Not actually Netcat Tool"
-    print
-    print "Usage: not_netcat.py -t target_host -p port"
-    print "-l --listen                  - listen on [host]:[port] for incoming connections"
-    print "-e --execute=file_to_run     - execute the given file upon receiving a connection"
-    print "-c --command                 - initialize a command shell"
-    print "-u --upload=destination      - upon receiving connection upload file and write to [destination]"
-
-    print
-    print
-    print "Examples: "
-    print "not_netcat.py -t 192.168.0.1 -p 5555 -l -c"
-    print "not_netcat.py -t 192.168.0.1 -p 5555 -u=c:\\target.exe"
-    print "not_netcat.py -t 192.168.0.1 -p 5555 -l -e=\"cat /etc/passwd\""
-    print "echo 'ABCDEFGHI' | ./not_netcat.py -t 192.168.11.12 -p 135"
-    sys.exit(0)
 
 
-
+# this is for incoming connections
 def server_loop():
-    global target
-    global port
+        global target
+        global port
+        
+        # if no target is defined we listen on all interfaces
+        if not len(target):
+                target = "0.0.0.0"
+                
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind((target,port))
+        
+        server.listen(5)        
+        
+        while True:
+                client_socket, addr = server.accept()
+                
+                # spin off a thread to handle our new client
+                client_thread = threading.Thread(target=client_handler,args=(client_socket,))
+                client_thread.start()
 
-    # if no target is defined we listen on all interfaces
-    if not len(target):
-        target = "0.0.0.0"
-
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((target,port))
-
-    server.listen(5)
-
-    while True:
-        client_socket, addr = server.accept()
-
-        # spin off a thread to handle our new client
-        client_thread = threading.Thread(targe=client_handler,args=(client_socket,))
-        client_thread.start()
 
 
 
 def client_sender(buffer):
 
-    client = socket.socket(socket.AF_INET, socket.SCOK_STREAM)
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
 
@@ -180,6 +164,23 @@ def client_sender(buffer):
         # teardown the connection
         client.close()
 
+def usage():
+    print "Not actually Netcat Tool"
+    print
+    print "Usage: not_netcat.py -t target_host -p port"
+    print "-l --listen                  - listen on [host]:[port] for incoming connections"
+    print "-e --execute=file_to_run     - execute the given file upon receiving a connection"
+    print "-c --command                 - initialize a command shell"
+    print "-u --upload=destination      - upon receiving connection upload file and write to [destination]"
+
+    print
+    print
+    print "Examples: "
+    print "not_netcat.py -t 192.168.0.1 -p 5555 -l -c"
+    print "not_netcat.py -t 192.168.0.1 -p 5555 -u=c:\\target.exe"
+    print "not_netcat.py -t 192.168.0.1 -p 5555 -l -e=\"cat /etc/passwd\""
+    print "echo 'ABCDEFGHI' | ./not_netcat.py -t 192.168.11.12 -p 135"
+    sys.exit(0)
 
 
 def main():
@@ -196,7 +197,7 @@ def main():
     # read the commandline options
     try:
         opts, args = getopt.getopt(sys.argv[1:],"hel:t:p:cu", ["help","listen","execute","target","port","command","upload"])
-    except getop.GetoptError as err:
+    except getopt.GetoptError as err:
         print str(err)
         usage()
 
@@ -204,15 +205,15 @@ def main():
     for o,a in opts:
         if o in ("-h", "--help"):
             usage()
-        elif o in ("-l", "--listen")
+        elif o in ("-l", "--listen"):
             listen = True
-        elif o in ("-e", "--execute")
+        elif o in ("-e", "--execute"):
             execute = a
-        elif o in ("-c", "--commandshell")
+        elif o in ("-c", "--commandshell"):
             command = True
-        elif o in ("-u", "--upload")
+        elif o in ("-u", "--upload"):
             upload_destination = a
-        elif o in ("-t", "--target")
+        elif o in ("-t", "--target"):
             target = a
         elif o in ("-p", "--port"):
             port = int(a)
@@ -237,5 +238,5 @@ def main():
     if listen:
         server_loop()
 
-    
+
 main()
