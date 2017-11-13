@@ -1,3 +1,5 @@
+#!/opt/local/bin/python2.7
+
 import sys
 import socket
 import getopt
@@ -13,7 +15,6 @@ target             = ""
 upload_destination = ""
 port               = 0
 
-
 def run_command(command):
 
     # trim the newline
@@ -21,7 +22,8 @@ def run_command(command):
 
     # run the command and get the output back
     try:
-        output = subpress.check_output(command,stderr=subpress.STDOUT, shell=True)
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
+
     except:
         output = "Failed to execute command.\r\n"
 
@@ -93,30 +95,26 @@ def client_handler(client_socket):
             # send back the response
             client_socket.send(response)
 
-
-
-
 # this is for incoming connections
 def server_loop():
-        global target
-        global port
+    global target
+    global port
+    
+    # if no target is defined we listen on all interfaces
+    if not len(target):
+        target = "0.0.0.0"
+            
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((target,port))
+    
+    server.listen(5)        
+    
+    while True:
+        client_socket, addr = server.accept()
         
-        # if no target is defined we listen on all interfaces
-        if not len(target):
-                target = "0.0.0.0"
-                
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind((target,port))
-        
-        server.listen(5)        
-        
-        while True:
-                client_socket, addr = server.accept()
-                
-                # spin off a thread to handle our new client
-                client_thread = threading.Thread(target=client_handler,args=(client_socket,))
-                client_thread.start()
-
+        # spin off a thread to handle our new client
+        client_thread = threading.Thread(target=client_handler,args=(client_socket,))
+        client_thread.start()
 
 
 
@@ -196,31 +194,31 @@ def main():
 
     # read the commandline options
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hel:t:p:cu", ["help","listen","execute","target","port","command","upload"])
+        opts, args = getopt.getopt(sys.argv[1:],"hle:t:p:cu:",["help","listen","execute","target","port","command","upload"])
     except getopt.GetoptError as err:
         print str(err)
         usage()
 
 
     for o,a in opts:
-        if o in ("-h", "--help"):
+        if o in ("-h","--help"):
             usage()
-        elif o in ("-l", "--listen"):
+        elif o in ("-l","--listen"):
             listen = True
-        elif o in ("-e", "--execute"):
+        elif o in ("-e","--execute"):
             execute = a
-        elif o in ("-c", "--commandshell"):
+        elif o in ("-c","--commandshell"):
             command = True
-        elif o in ("-u", "--upload"):
+        elif o in ("-u","--upload"):
             upload_destination = a
-        elif o in ("-t", "--target"):
+        elif o in ("-t","--target"):
             target = a
-        elif o in ("-p", "--port"):
+        elif o in ("-p","--port"):
             port = int(a)
         else:
             assert False,"Unhandled Option"
 
-        
+
     # are we going to listen or jus tsend data from stdin?
     if not listen and len(target) and port > 0:
 
@@ -237,6 +235,5 @@ def main():
     # depending on our command line options above
     if listen:
         server_loop()
-
 
 main()
