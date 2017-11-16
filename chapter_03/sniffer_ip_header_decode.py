@@ -5,7 +5,7 @@ import struct
 from ctypes import *
 
 # host to listen on 
-host = "127.0.0.1"
+host = "192.168.1.211"
 
 # our ip header
 class IP(Structure):
@@ -61,7 +61,7 @@ try:
         raw_buffer = sniffer.recvfrom(65565)[0]
 
         # create an IP header from mthe first 20 bytes of the buffer
-        ip_header = IP(raw_buffer[0:20])
+        ip_header = IP(raw_buffer[0:32])
 
         # print out the protocol that was detected and the hosts
         print "Protocol: %s %s -> %s" % (ip_header.protocol, ip_header.src_address, ip_header.dst_address)
